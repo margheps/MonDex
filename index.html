@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MonDex</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+  :root {
+    --gb-dark: #0f380f;
+    --gb-mid-dark: #306230;
+    --gb-mid: #8bac0f;
+    --gb-light: #9bbc0f;
+    --gb-lightest: #e0f8d0;
+    --gb-screen: #c4d99b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Press Start 2P', monospace;
+    background: var(--gb-dark);
+    color: var(--gb-lightest);
+    min-height: 100vh;
+    font-size: 8px;
+    image-rendering: pixelated;
+  }
+  .screen {
+    max-width: 480px;
+    margin: 0 auto;
+    background: var(--gb-screen);
+    min-height: 100vh;
+    color: var(--gb-dark);
+    position: relative;
+    overflow: hidden;
+  }
+  .screen-header {
+    background: var(--gb-dark);
+    color: var(--gb-light);
+    padding: 8px 12px;
+    font-size: 7px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 3px solid var(--gb-mid-dark);
+  }
+  .page { display: none; flex-direction: column; min-height: calc(100vh - 32px); }
+  .page.active { display: flex; }
+  .splash { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; padding: 32px 16px; background: var(--gb-screen); }
+  .splash-logo { text-align: center; line-height: 2; }
+  .splash-logo .title { font-size: 22px; color: var(--gb-dark); text-shadow: 3px 3px 0 var(--gb-mid-dark); letter-spacing: 4px; display: block; }
+  .splash-logo .subtitle { font-size: 7px; color: var(--gb-mid-dark); display: block; margin-top: 8px; }
+  .mountain-art { width: 200px; height: 100px; }
+  .btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    background: var(--gb-dark);
+    color: var(--gb-light);
+    border: none;
+    padding: 10px 16px;
+    cursor: pointer;
+    box-shadow: 4px 4px 0 var(--gb-mid-dark);
+    transition: transform 0.1s;
+  }
+  .btn:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 var(--gb-mid-dark); }
+  .btn:hover { background: var(--gb-mid-dark); }
+  .btn-small {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    background: var(--gb-mid);
+    color: var(--gb-dark);
+    border: none;
+    padding: 5px 8px;
+    cursor: pointer;
+    box-shadow: 2px 2px 0 var(--gb-dark);
+  }
+  .btn-small:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 var(--gb-dark); }
+  .btn-small:hover { background: var(--gb-light); }
+  .btn-danger { background: #8b1a1a; color: var(--gb-lightest); box-shadow: 2px 2px 0 #3a0a0a; }
+  .btn-danger:hover { background: #a02020; }
+  .list-header {
+    background: var(--gb-dark);
+    color: var(--gb-light);
+    padding: 10px 12px;
+    font-size: 7px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    border-bottom: 2px solid var(--gb-mid-dark);
+  }
+  .list-header .back-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    background: var(--gb-mid-dark);
+    color: var(--gb-light);
+    border: none;
+    padding: 4px 7px;
+    cursor: pointer;
+  }
+  .back-btn:hover { background: var(--gb-mid); }
+  .list-header h2 { flex: 1; font-size: 8px; color: var(--gb-light); }
+  .list-body { flex: 1; padding: 12px; overflow-y: auto; }
+  .list-item {
+    background: var(--gb-lightest);
+    border: 2px solid var(--gb-dark);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 3px 3px 0 var(--gb-mid-dark);
+    transition: transform 0.1s;
+  }
+  .list-item:hover { background: var(--gb-mid); transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--gb-mid-dark); }
+  .list-item:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 var(--gb-mid-dark); }
+  .list-item-name { font-size: 8px; color: var(--gb-dark); }
+  .list-item-count { font-size: 6px; color: var(--gb-mid-dark); }
+  .add-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .add-row input {
+    flex: 1;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    background: var(--gb-lightest);
+    border: 2px solid var(--gb-dark);
+    padding: 6px 8px;
+    color: var(--gb-dark);
+    outline: none;
+  }
+  .add-row input:focus { border-color: var(--gb-mid-dark); background: white; }
+  .cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px; }
+  .card {
+    border: 2px solid var(--gb-dark);
+    padding: 10px;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 var(--gb-mid-dark);
+    transition: transform 0.1s;
+    position: relative;
+    min-height: 130px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .card:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--gb-mid-dark); }
+  .card:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 var(--gb-mid-dark); }
+  .card.esplorata { background: var(--gb-light); }
+  .card.da-esplorare { background: var(--gb-lightest); filter: grayscale(100%); border-style: dashed; }
+  .card-icon { font-size: 20px; text-align: center; display: block; }
+  .card-name { font-size: 6px; color: var(--gb-dark); text-align: center; font-weight: bold; word-break: break-word; }
+  .card-tipo { font-size: 5px; color: var(--gb-mid-dark); text-align: center; }
+  .card-stat { font-size: 5px; color: var(--gb-dark); }
+  .card-badge { position: absolute; top: 4px; right: 4px; font-size: 5px; background: var(--gb-dark); color: var(--gb-light); padding: 2px 4px; }
+  .add-card-btn {
+    border: 2px dashed var(--gb-dark);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 24px;
+    color: var(--gb-mid-dark);
+    cursor: pointer;
+    min-height: 130px;
+    transition: transform 0.1s;
+  }
+  .add-card-btn:hover { background: var(--gb-mid); transform: translate(-1px,-1px); }
+  .detail-body { flex: 1; padding: 12px; overflow-y: auto; }
+  .detail-image-area {
+    width: 100%; height: 140px;
+    background: var(--gb-mid);
+    border: 2px solid var(--gb-dark);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 12px; overflow: hidden; position: relative;
+  }
+  .detail-image-area img { width: 100%; height: 100%; object-fit: cover; }
+  .detail-image-placeholder { font-size: 40px; }
+  .photo-input { display: none; }
+  .detail-icon-big { font-size: 36px; text-align: center; margin: 8px 0; display: block; }
+  .detail-tipo { font-size: 7px; color: var(--gb-mid-dark); text-align: center; margin-bottom: 12px; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .stat-box { background: var(--gb-lightest); border: 2px solid var(--gb-dark); padding: 8px; text-align: center; }
+  .stat-label { font-size: 5px; color: var(--gb-mid-dark); display: block; margin-bottom: 4px; }
+  .stat-val { font-size: 9px; color: var(--gb-dark); display: block; }
+  .note-box { background: var(--gb-lightest); border: 2px solid var(--gb-dark); padding: 8px; font-size: 6px; color: var(--gb-dark); min-height: 40px; margin-bottom: 12px; line-height: 1.8; }
+  .detail-actions { display: flex; flex-direction: column; gap: 8px; }
+  .modal-overlay {
+    display: none; position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15,56,15,0.85);
+    z-index: 100; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--gb-screen);
+    border: 3px solid var(--gb-dark);
+    box-shadow: 6px 6px 0 var(--gb-dark);
+    padding: 16px; width: 340px;
+    max-width: 90vw; max-height: 80vh; overflow-y: auto;
+  }
+  .modal h3 { font-size: 8px; color: var(--gb-dark); margin-bottom: 12px; border-bottom: 2px solid var(--gb-dark); padding-bottom: 8px; }
+  .field-row { margin-bottom: 10px; }
+  .field-row label { font-size: 6px; color: var(--gb-mid-dark); display: block; margin-bottom: 4px; }
+  .field-row input, .field-row textarea, .field-row select {
+    font-family: 'Press Start 2P', monospace; font-size: 7px; width: 100%;
+    background: var(--gb-lightest); border: 2px solid var(--gb-dark);
+    padding: 6px 8px; color: var(--gb-dark); outline: none; resize: vertical;
+  }
+  .field-row input:focus, .field-row textarea:focus { border-color: var(--gb-mid-dark); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+  .edit-list-item { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .edit-list-item span { flex: 1; font-size: 7px; color: var(--gb-dark); }
+  .pixel-divider { height: 2px; background: repeating-linear-gradient(90deg, var(--gb-dark) 0px, var(--gb-dark) 4px, transparent 4px, transparent 8px); margin: 8px 0; }
+  .esplorata-badge { font-size: 6px; background: var(--gb-dark); color: var(--gb-light); padding: 3px 6px; display: inline-block; margin-bottom: 8px; }
+  .blink { animation: blink 1s step-end infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .progress-bar-bg { background: var(--gb-lightest); border: 2px solid var(--gb-dark); height: 12px; margin-bottom: 12px; }
+  .progress-bar-fill { background: var(--gb-dark); height: 100%; transition: width 0.5s; }
+  .progress-label { font-size: 6px; color: var(--gb-mid-dark); margin-bottom: 4px; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--gb-mid); }
+  ::-webkit-scrollbar-thumb { background: var(--gb-dark); }
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="screen-header">
+    <span>MON<span class="blink">_</span>DEX v1.0</span>
+    <span id="header-title">MONTAGNE D'AVVENTURA</span>
+  </div>
+
+  <!-- SPLASH -->
+  <div class="page active" id="page-splash">
+    <div class="splash">
+      <div class="splash-logo">
+        <span class="title">MonDex</span>
+        <span class="subtitle">MONTAGNE D'AVVENTURA</span>
+      </div>
+      <svg class="mountain-art" viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        <rect width="200" height="100" fill="#9bbc0f"/>
+        <polygon points="30,90 80,20 130,90" fill="#0f380f"/>
+        <polygon points="80,30 110,5 140,30 130,30 110,12 90,30" fill="#e0f8d0"/>
+        <polygon points="90,90 140,35 190,90" fill="#306230"/>
+        <polygon points="140,45 158,20 176,45 170,45 158,28 146,45" fill="#e0f8d0"/>
+        <polygon points="5,90 40,55 75,90" fill="#306230"/>
+        <rect x="0" y="88" width="200" height="12" fill="#0f380f"/>
+      </svg>
+      <button class="btn" onclick="goTo('page-regioni')">&#9658; CONTINUA L'AVVENTURA</button>
+    </div>
+  </div>
+
+  <!-- REGIONI -->
+  <div class="page" id="page-regioni">
+    <div class="list-header">
+      <button class="back-btn" onclick="goTo('page-splash')">&#9664;</button>
+      <h2>REGIONI</h2>
+      <button class="btn-small" onclick="openEditModal('regioni')">MODIFICA</button>
+    </div>
+    <div class="list-body" id="list-regioni"></div>
+  </div>
+
+  <!-- SOTTOGRUPPI -->
+  <div class="page" id="page-sottogruppi">
+    <div class="list-header">
+      <button class="back-btn" onclick="goTo('page-regioni')">&#9664;</button>
+      <h2 id="header-sottogruppi">GRUPPI</h2>
+      <button class="btn-small" onclick="openEditModal('sottogruppi')">MODIFICA</button>
+    </div>
+    <div class="list-body" id="list-sottogruppi"></div>
+  </div>
+
+  <!-- SCHEDE -->
+  <div class="page" id="page-schede">
+    <div class="list-header">
+      <button class="back-btn" onclick="goTo('page-sottogruppi')">&#9664;</button>
+      <h2 id="header-schede">ESCURSIONI</h2>
+    </div>
+    <div style="padding:8px 12px;display:flex;gap:6px;flex-wrap:wrap;background:var(--gb-mid);border-bottom:2px solid var(--gb-dark);">
+      <span style="font-size:5px;color:var(--gb-dark);">ESPLORATE: <span id="count-exp">0</span></span>
+      <span style="font-size:5px;color:var(--gb-dark);">| TOTALE: <span id="count-tot">0</span></span>
+    </div>
+    <div id="progress-area" style="padding:8px 12px;background:var(--gb-screen);">
+      <div class="progress-label">PROGRESSO ESPLORAZIONE</div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
+    </div>
+    <div class="cards-grid" id="grid-schede"></div>
+  </div>
+
+  <!-- DETTAGLIO -->
+  <div class="page" id="page-dettaglio">
+    <div class="list-header">
+      <button class="back-btn" onclick="goTo('page-schede')">&#9664;</button>
+      <h2 id="header-dettaglio">DETTAGLIO</h2>
+    </div>
+    <div class="detail-body">
+      <div class="detail-image-area" id="detail-img-area">
+        <span class="detail-image-placeholder" id="detail-img-icon">&#127956;</span>
+        <img id="detail-img" style="display:none;position:absolute;top:0;left:0;"/>
+      </div>
+      <input type="file" class="photo-input" id="photo-input" accept="image/*" onchange="handlePhoto(event)">
+      <div id="detail-esplorata-badge"></div>
+      <span class="detail-icon-big" id="detail-icon"></span>
+      <div class="detail-tipo" id="detail-tipo"></div>
+      <div class="stat-grid">
+        <div class="stat-box"><span class="stat-label">ALTITUDINE</span><span class="stat-val" id="d-alt">-</span></div>
+        <div class="stat-box"><span class="stat-label">DISLIVELLO</span><span class="stat-val" id="d-dis">-</span></div>
+        <div class="stat-box"><span class="stat-label">KM PERCORSI</span><span class="stat-val" id="d-km">-</span></div>
+        <div class="stat-box"><span class="stat-label">TIPO</span><span class="stat-val" id="d-tipo2">-</span></div>
+      </div>
+      <div class="note-box" id="d-note"></div>
+      <div class="detail-actions">
+        <button class="btn" id="btn-esplora" onclick="toggleEsplorata()" style="font-size:7px;">&#9830; SEGNA COME ESPLORATA</button>
+        <button class="btn-small" onclick="openEditScheda()" style="font-size:6px;">MODIFICA DATI</button>
+        <button class="btn-small" onclick="document.getElementById('photo-input').click()" style="font-size:6px;">AGGIUNGI FOTO</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDIT LISTA -->
+<div class="modal-overlay" id="modal-edit-lista">
+  <div class="modal">
+    <h3 id="modal-edit-title">MODIFICA LISTA</h3>
+    <div id="modal-edit-items"></div>
+    <div class="pixel-divider"></div>
+    <div class="add-row">
+      <input type="text" id="new-item-input" placeholder="NUOVO...">
+      <button class="btn-small" onclick="addListItem()">+</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-small btn-danger" onclick="closeModal('modal-edit-lista')">CHIUDI</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AGGIUNGI/MODIFICA SCHEDA -->
+<div class="modal-overlay" id="modal-scheda">
+  <div class="modal">
+    <h3 id="modal-scheda-title">NUOVA ESCURSIONE</h3>
+    <div class="field-row"><label>NOME</label><input type="text" id="s-nome" placeholder="Es. Cima Rosetta"></div>
+    <div class="field-row"><label>TIPO</label>
+      <select id="s-tipo">
+        <option value="cima">&#127956; CIMA</option>
+        <option value="rifugio">&#127968; RIFUGIO</option>
+        <option value="bivacco">&#9968; BIVACCO</option>
+      </select>
+    </div>
+    <div class="field-row"><label>ALTITUDINE (m)</label><input type="number" id="s-alt" placeholder="Es. 3000"></div>
+    <div class="field-row"><label>DISLIVELLO (m)</label><input type="number" id="s-dis" placeholder="Es. 800"></div>
+    <div class="field-row"><label>KM PERCORSI</label><input type="number" id="s-km" placeholder="Es. 12"></div>
+    <div class="field-row"><label>NOTE</label><textarea id="s-note" rows="3" placeholder="Note e ricordi..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-small btn-danger" onclick="closeModal('modal-scheda')">ANNULLA</button>
+      <button class="btn-small" onclick="saveScheda()">SALVA</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TIPO_ICONS = { cima: '⛰️', rifugio: '🏠', bivacco: '⛺' };
+const TIPO_LABELS = { cima: 'CIMA', rifugio: 'RIFUGIO', bivacco: 'BIVACCO' };
+const STORAGE_KEY = 'mondex_state_v1';
+
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ regioni: state.regioni, nextId: state.nextId })); } catch(e) {}
+}
+
+function defaultData() {
+  return {
+    regioni: [
+      { id:1, nome:'VENETO', sottogruppi:[
+        { id:101, nome:'MARMOLADA', schede:[] },
+        { id:102, nome:'TRE CIME DI LAVAREDO', schede:[] },
+        { id:103, nome:'GRUPPO DEL SORAPISS', schede:[] },
+        { id:104, nome:'MONTE CRISTALLO', schede:[] },
+        { id:105, nome:'MASSICCIO DEL GRAPPA', schede:[] },
+        { id:106, nome:'PICCOLE DOLOMITI', schede:[] }
+      ]},
+      { id:2, nome:'TRENTINO', sottogruppi:[
+        { id:201, nome:'DOLOMITI DI BRENTA', schede:[] },
+        { id:202, nome:'GRUPPO DEL SELLA', schede:[] },
+        { id:203, nome:'PALE DI SAN MARTINO', schede:[] },
+        { id:204, nome:'GRUPPO ADAMELLO-PRESANELLA', schede:[] },
+        { id:205, nome:'CATENA DEL LAGORAI', schede:[] },
+        { id:206, nome:'GRUPPO DEL CATINACCIO', schede:[] }
+      ]},
+      { id:3, nome:'ALTO ADIGE', sottogruppi:[
+        { id:301, nome:'GRUPPO ORTLES-CEVEDALE', schede:[] },
+        { id:302, nome:'ALPI AURINE', schede:[] },
+        { id:303, nome:'MASSICCIO DELLO SCILIAR', schede:[] },
+        { id:304, nome:'GRUPPO DEL SASSOLUNGO', schede:[] },
+        { id:305, nome:'ODLE-PUEZ', schede:[] },
+        { id:306, nome:'ALPI VENOSTE', schede:[] }
+      ]},
+      { id:4, nome:'FRIULI VENEZIA GIULIA', sottogruppi:[
+        { id:401, nome:'ALPI CARNICHE', schede:[] },
+        { id:402, nome:'ALPI GIULIE', schede:[] },
+        { id:403, nome:'DOLOMITI FRIULANE', schede:[] },
+        { id:404, nome:'PREALPI GIULIE', schede:[] }
+      ]}
+    ],
+    nextId: 9000
+  };
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const saved = JSON.parse(raw);
+      return { ...saved, currentRegione: null, currentSottogruppo: null, currentScheda: null, editingMode: null, editingScheda: false };
+    }
+  } catch(e) {}
+  return { ...defaultData(), currentRegione: null, currentSottogruppo: null, currentScheda: null, editingMode: null, editingScheda: false };
+}
+
+let state = loadState();
+
+function goTo(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  if (pageId === 'page-regioni') renderRegioni();
+  if (pageId === 'page-schede') renderSchede();
+}
+
+function renderRegioni() {
+  const el = document.getElementById('list-regioni');
+  el.innerHTML = '';
+  state.regioni.forEach(r => {
+    const totSchede = r.sottogruppi.reduce((a,s) => a + s.schede.length, 0);
+    const totExp = r.sottogruppi.reduce((a,s) => a + s.schede.filter(x=>x.esplorata).length, 0);
+    const div = document.createElement('div');
+    div.className = 'list-item';
+    div.innerHTML = `<span class="list-item-name">${r.nome}</span><span class="list-item-count">${totExp}/${totSchede} ESP.</span>`;
+    div.onclick = () => { state.currentRegione = r; openSottogruppi(r); };
+    el.appendChild(div);
+  });
+}
+
+function openSottogruppi(r) {
+  document.getElementById('header-sottogruppi').textContent = r.nome;
+  renderSottogruppi();
+  goTo('page-sottogruppi');
+}
+
+function renderSottogruppi() {
+  const el = document.getElementById('list-sottogruppi');
+  el.innerHTML = '';
+  state.currentRegione.sottogruppi.forEach(s => {
+    const exp = s.schede.filter(x=>x.esplorata).length;
+    const div = document.createElement('div');
+    div.className = 'list-item';
+    div.innerHTML = `<span class="list-item-name">${s.nome}</span><span class="list-item-count">${exp}/${s.schede.length} ESP.</span>`;
+    div.onclick = () => { state.currentSottogruppo = s; openSchede(s); };
+    el.appendChild(div);
+  });
+}
+
+function openSchede(s) {
+  document.getElementById('header-schede').textContent = s.nome;
+  renderSchede();
+  goTo('page-schede');
+}
+
+function renderSchede() {
+  const s = state.currentSottogruppo;
+  const grid = document.getElementById('grid-schede');
+  grid.innerHTML = '';
+  const exp = s.schede.filter(x=>x.esplorata).length;
+  document.getElementById('count-exp').textContent = exp;
+  document.getElementById('count-tot').textContent = s.schede.length;
+  const pct = s.schede.length ? Math.round(exp/s.schede.length*100) : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  s.schede.forEach(sc => {
+    const card = document.createElement('div');
+    card.className = 'card ' + (sc.esplorata ? 'esplorata' : 'da-esplorare');
+    const icon = TIPO_ICONS[sc.tipo] || '⛰️';
+    card.innerHTML = `
+      ${sc.esplorata ? '<span class="card-badge">ESP.</span>' : ''}
+      <span class="card-icon">${icon}</span>
+      <span class="card-name">${sc.nome}</span>
+      <span class="card-tipo">${TIPO_LABELS[sc.tipo]||''}</span>
+      ${sc.alt ? `<span class="card-stat">▲ ${sc.alt}m</span>` : ''}
+      ${sc.dis ? `<span class="card-stat">↕ ${sc.dis}m D+</span>` : ''}
+      ${sc.km ? `<span class="card-stat">▶ ${sc.km}km</span>` : ''}
+    `;
+    card.onclick = () => openDettaglio(sc);
+    grid.appendChild(card);
+  });
+  const addBtn = document.createElement('button');
+  addBtn.className = 'add-card-btn';
+  addBtn.textContent = '+';
+  addBtn.onclick = () => openNewScheda();
+  grid.appendChild(addBtn);
+}
+
+function openDettaglio(sc) {
+  state.currentScheda = sc;
+  renderDettaglio();
+  goTo('page-dettaglio');
+}
+
+function renderDettaglio() {
+  const sc = state.currentScheda;
+  document.getElementById('header-dettaglio').textContent = sc.nome;
+  document.getElementById('detail-icon').textContent = TIPO_ICONS[sc.tipo] || '⛰️';
+  document.getElementById('detail-tipo').textContent = TIPO_LABELS[sc.tipo] || '';
+  document.getElementById('d-alt').textContent = sc.alt ? sc.alt + 'm' : '-';
+  document.getElementById('d-dis').textContent = sc.dis ? sc.dis + 'm' : '-';
+  document.getElementById('d-km').textContent = sc.km ? sc.km + 'km' : '-';
+  document.getElementById('d-tipo2').textContent = TIPO_LABELS[sc.tipo] || '-';
+  document.getElementById('d-note').textContent = sc.note || 'Nessuna nota.';
+  document.getElementById('detail-esplorata-badge').innerHTML = sc.esplorata ? '<span class="esplorata-badge">♦ ESPLORATA</span>' : '';
+  document.getElementById('btn-esplora').innerHTML = sc.esplorata ? '♦ SEGNA COME DA ESPLORARE' : '♦ SEGNA COME ESPLORATA';
+  const imgEl = document.getElementById('detail-img');
+  const iconEl = document.getElementById('detail-img-icon');
+  if (sc.foto) { imgEl.src = sc.foto; imgEl.style.display='block'; iconEl.style.display='none'; }
+  else { imgEl.style.display='none'; iconEl.style.display='block'; }
+}
+
+function toggleEsplorata() {
+  state.currentScheda.esplorata = !state.currentScheda.esplorata;
+  saveState(); renderDettaglio();
+}
+
+function handlePhoto(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => { state.currentScheda.foto = ev.target.result; saveState(); renderDettaglio(); };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+function openNewScheda() {
+  state.editingScheda = false;
+  document.getElementById('modal-scheda-title').textContent = 'NUOVA ESCURSIONE';
+  ['s-nome','s-alt','s-dis','s-km','s-note'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('s-tipo').value = 'cima';
+  document.getElementById('modal-scheda').classList.add('open');
+}
+
+function openEditScheda() {
+  const sc = state.currentScheda;
+  state.editingScheda = true;
+  document.getElementById('modal-scheda-title').textContent = 'MODIFICA SCHEDA';
+  document.getElementById('s-nome').value = sc.nome;
+  document.getElementById('s-tipo').value = sc.tipo;
+  document.getElementById('s-alt').value = sc.alt || '';
+  document.getElementById('s-dis').value = sc.dis || '';
+  document.getElementById('s-km').value = sc.km || '';
+  document.getElementById('s-note').value = sc.note || '';
+  document.getElementById('modal-scheda').classList.add('open');
+}
+
+function saveScheda() {
+  const nome = document.getElementById('s-nome').value.trim().toUpperCase();
+  if (!nome) return;
+  const tipo = document.getElementById('s-tipo').value;
+  const alt = parseInt(document.getElementById('s-alt').value)||0;
+  const dis = parseInt(document.getElementById('s-dis').value)||0;
+  const km = parseFloat(document.getElementById('s-km').value)||0;
+  const note = document.getElementById('s-note').value.trim();
+  if (state.editingScheda) {
+    Object.assign(state.currentScheda, {nome, tipo, alt, dis, km, note});
+    saveState(); renderDettaglio();
+  } else {
+    const nuova = { id: state.nextId++, nome, tipo, alt, dis, km, note, esplorata: false, foto: null };
+    state.currentSottogruppo.schede.push(nuova);
+    saveState();
+  }
+  closeModal('modal-scheda');
+  if (!state.editingScheda) renderSchede();
+}
+
+function openEditModal(mode) {
+  state.editingMode = mode;
+  document.getElementById('modal-edit-title').textContent = mode === 'regioni' ? 'MODIFICA REGIONI' : 'MODIFICA SOTTOGRUPPI';
+  document.getElementById('new-item-input').value = '';
+  renderEditList();
+  document.getElementById('modal-edit-lista').classList.add('open');
+}
+
+function renderEditList() {
+  const el = document.getElementById('modal-edit-items');
+  el.innerHTML = '';
+  const items = state.editingMode === 'regioni' ? state.regioni : state.currentRegione.sottogruppi;
+  items.forEach((item, i) => {
+    const row = document.createElement('div');
+    row.className = 'edit-list-item';
+    row.innerHTML = `<span>${item.nome}</span>`;
+    const del = document.createElement('button');
+    del.className = 'btn-small btn-danger';
+    del.textContent = 'X';
+    del.onclick = () => {
+      if (state.editingMode === 'regioni') state.regioni.splice(i,1);
+      else state.currentRegione.sottogruppi.splice(i,1);
+      saveState(); renderEditList();
+    };
+    row.appendChild(del);
+    el.appendChild(row);
+  });
+}
+
+function addListItem() {
+  const val = document.getElementById('new-item-input').value.trim().toUpperCase();
+  if (!val) return;
+  if (state.editingMode === 'regioni') {
+    state.regioni.push({ id: state.nextId++, nome: val, sottogruppi: [] });
+  } else {
+    state.currentRegione.sottogruppi.push({ id: state.nextId++, nome: val, schede: [] });
+  }
+  document.getElementById('new-item-input').value = '';
+  saveState(); renderEditList();
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  if (id === 'modal-edit-lista') {
+    if (state.editingMode === 'regioni') renderRegioni();
+    else renderSottogruppi();
+  }
+}
+
+window.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+});
+
+renderRegioni();
+</script>
+</body>
+</html>
